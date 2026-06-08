@@ -21,7 +21,7 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
       await emit.forEach(
         _repository.watchProducts(category: event.category),
         onData: (products) => ShopLoaded(products),
-        onError: (_, __) => const ShopError('Gagal memuat produk. Cek koneksi internet.'),
+        onError: (_, _) => const ShopError('Gagal memuat produk. Cek koneksi internet.'),
       );
     } catch (e) {
       emit(ShopError(e.toString()));

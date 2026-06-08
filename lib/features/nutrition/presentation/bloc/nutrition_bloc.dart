@@ -20,7 +20,7 @@ class NutritionBloc extends Bloc<NutritionEvent, NutritionState> {
     await emit.forEach(
       _repository.watchDailyLogs(event.userId, event.date),
       onData: (logs) => state.copyWith(logs: logs, isLoading: false, date: event.date),
-      onError: (_, __) => state.copyWith(isLoading: false, error: 'Gagal memuat data'),
+      onError: (_, _) => state.copyWith(isLoading: false, error: 'Gagal memuat data'),
     );
   }
 

@@ -22,7 +22,7 @@ class PlannerBloc extends Bloc<PlannerEvent, PlannerState> {
     await emit.forEach(
       _repository.watchWeekPlans(event.userId, event.startDate),
       onData: (plans) => state.copyWith(plans: plans, isLoading: false),
-      onError: (_, __) => state.copyWith(isLoading: false),
+      onError: (_, _) => state.copyWith(isLoading: false),
     );
   }
 

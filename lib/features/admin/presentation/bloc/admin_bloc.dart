@@ -21,7 +21,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     await emit.forEach(
       _repository.watchAllOrders(),
       onData: (orders) => state.copyWith(orders: orders, isLoading: false),
-      onError: (_, __) => state.copyWith(isLoading: false, error: 'Gagal memuat pesanan'),
+      onError: (_, _) => state.copyWith(isLoading: false, error: 'Gagal memuat pesanan'),
     );
   }
 
@@ -29,7 +29,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     await emit.forEach(
       _repository.watchAllProducts(),
       onData: (products) => state.copyWith(products: products),
-      onError: (_, __) => state.copyWith(error: 'Gagal memuat produk'),
+      onError: (_, _) => state.copyWith(error: 'Gagal memuat produk'),
     );
   }
 

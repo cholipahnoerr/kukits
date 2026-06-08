@@ -8,6 +8,14 @@ class CartItem {
 
   int get subtotal => product.price * quantity;
 
+  String get formattedSubtotal {
+    final formatted = subtotal.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]}.',
+        );
+    return 'Rp $formatted';
+  }
+
   CartItem copyWith({int? quantity}) =>
       CartItem(product: product, quantity: quantity ?? this.quantity);
 }

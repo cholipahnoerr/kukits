@@ -22,4 +22,6 @@ class AuthRepository {
 
   Future<void> sendPasswordResetEmail(String email) =>
       _dataSource.sendPasswordResetEmail(email);
+
+  Future<UserModel> getUserById(String uid) => _dataSource.getUserById(uid);
 }

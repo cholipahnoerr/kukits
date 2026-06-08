@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/user_model.dart';
 
 abstract class AuthEvent extends Equatable {
@@ -51,12 +52,12 @@ class AuthPasswordResetRequested extends AuthEvent {
 }
 
 class AuthStateChanged extends AuthEvent {
-  final bool isLoggedIn;
+  final User? firebaseUser;
 
-  const AuthStateChanged({required this.isLoggedIn});
+  const AuthStateChanged({this.firebaseUser});
 
   @override
-  List<Object> get props => [isLoggedIn];
+  List<Object?> get props => [firebaseUser?.uid];
 }
 
 class AuthUserUpdated extends AuthEvent {

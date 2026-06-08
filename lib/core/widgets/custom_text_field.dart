@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 
 class CustomTextField extends StatefulWidget {
   final String label;
@@ -8,8 +9,11 @@ class CustomTextField extends StatefulWidget {
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final Widget? prefixIcon;
+  final Widget? suffixIcon;
   final bool readOnly;
   final int maxLines;
+  final VoidCallback? onTap;
+  final void Function(String)? onChanged;
 
   const CustomTextField({
     super.key,
@@ -20,8 +24,11 @@ class CustomTextField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.validator,
     this.prefixIcon,
+    this.suffixIcon,
     this.readOnly = false,
     this.maxLines = 1,
+    this.onTap,
+    this.onChanged,
   });
 
   @override
@@ -40,16 +47,32 @@ class _CustomTextFieldState extends State<CustomTextField> {
       validator: widget.validator,
       readOnly: widget.readOnly,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
+      onTap: widget.onTap,
+      onChanged: widget.onChanged,
+      style: const TextStyle(
+        fontSize: 14,
+        color: AppColors.textPrimary,
+      ),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
-        prefixIcon: widget.prefixIcon,
-        suffixIcon: widget.isPassword
-            ? IconButton(
-                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
-                onPressed: () => setState(() => _obscure = !_obscure),
+        prefixIcon: widget.prefixIcon != null
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: widget.prefixIcon,
               )
             : null,
+        prefixIconConstraints: const BoxConstraints(minWidth: 48),
+        suffixIcon: widget.isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              )
+            : widget.suffixIcon,
       ),
     );
   }

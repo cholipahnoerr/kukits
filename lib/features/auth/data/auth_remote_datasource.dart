@@ -57,6 +57,12 @@ class AuthRemoteDataSource {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
+  Future<UserModel> getUserById(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    if (doc.exists) return UserModel.fromFirestore(doc);
+    throw Exception('User tidak ditemukan');
+  }
+
   Future<UserModel> _fetchOrCreateUser(User firebaseUser) async {
     final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
     if (doc.exists) return UserModel.fromFirestore(doc);

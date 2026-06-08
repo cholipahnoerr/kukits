@@ -25,7 +25,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     });
 
     _authSubscription = _repository.authStateChanges.listen((user) {
-      add(AuthStateChanged(isLoggedIn: user != null));
+      add(AuthStateChanged(firebaseUser: user));
     });
   }
 
@@ -96,9 +96,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  void _onAuthStateChanged(AuthStateChanged event, Emitter<AuthState> emit) {
-    if (!event.isLoggedIn && state is! AuthLoading) {
-      emit(const AuthUnauthenticated());
+  Future<void> _onAuthStateChanged(
+    AuthStateChanged event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (event.firebaseUser == null) {
+      if (state is! AuthLoading) emit(const AuthUnauthenticated());
+    } else if (state is! AuthAuthenticated) {
+      try {
+        final user = await _repository.getUserById(event.firebaseUser!.uid);
+        emit(AuthAuthenticated(user: user));
+      } catch (_) {
+        emit(const AuthUnauthenticated());
+      }
     }
   }
 

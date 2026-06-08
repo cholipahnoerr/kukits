@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final bool isOutlined;
+  final bool isAccent;
   final Widget? icon;
+  final double? width;
 
   const CustomButton({
     super.key,
@@ -13,7 +16,9 @@ class CustomButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.isOutlined = false,
+    this.isAccent = false,
     this.icon,
+    this.width,
   });
 
   @override
@@ -31,9 +36,44 @@ class CustomButton extends StatelessWidget {
               )
             : Text(label);
 
+    final size = width != null ? Size(width!, 52) : const Size.fromHeight(52);
+
     if (isOutlined) {
-      return OutlinedButton(onPressed: isLoading ? null : onPressed, child: child);
+      return SizedBox(
+        width: width,
+        child: OutlinedButton(
+          onPressed: isLoading ? null : onPressed,
+          child: child,
+        ),
+      );
     }
-    return ElevatedButton(onPressed: isLoading ? null : onPressed, child: child);
+
+    if (isAccent) {
+      return SizedBox(
+        width: width,
+        child: ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.accent,
+            foregroundColor: Colors.white,
+            minimumSize: size,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          child: child,
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: width,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(minimumSize: size),
+        child: child,
+      ),
+    );
   }
 }
