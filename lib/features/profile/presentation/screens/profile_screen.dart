@@ -14,7 +14,13 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthUnauthenticated) {
+          context.go(RouteNames.login);
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.background,
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
@@ -85,13 +91,15 @@ class ProfileScreen extends StatelessWidget {
           );
         },
       ),
+      ),
     );
   }
 
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      useRootNavigator: false,
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Keluar dari akun?',
@@ -106,12 +114,12 @@ class ProfileScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               context.read<AuthBloc>().add(const AuthLogoutRequested());
             },
             child: Text(

@@ -782,8 +782,8 @@ class _FoodLibrarySheetState extends State<_FoodLibrarySheet> {
                                 width: 40,
                                 height: 40,
                                 fit: BoxFit.cover,
-                                placeholder: (_, __) => _SavedFoodPlaceholder(),
-                                errorWidget: (_, __, ___) => _SavedFoodPlaceholder(),
+                                placeholder: (context, url) => _SavedFoodPlaceholder(),
+                                errorWidget: (context, url, err) => _SavedFoodPlaceholder(),
                               )
                             : _SavedFoodPlaceholder(),
                       ),

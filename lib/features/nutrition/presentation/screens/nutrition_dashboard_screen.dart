@@ -797,8 +797,8 @@ class _FoodLogTile extends StatelessWidget {
                       width: 44,
                       height: 44,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => _FoodImagePlaceholder(fromScan: log.fromScan),
-                      errorWidget: (_, __, ___) => _FoodImagePlaceholder(fromScan: log.fromScan),
+                      placeholder: (context, url) => _FoodImagePlaceholder(fromScan: log.fromScan),
+                      errorWidget: (context, url, err) => _FoodImagePlaceholder(fromScan: log.fromScan),
                     )
                   : _FoodImagePlaceholder(fromScan: log.fromScan),
             ),

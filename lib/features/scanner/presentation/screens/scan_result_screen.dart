@@ -73,9 +73,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       createdAt: DateTime.now(),
     );
 
+    if (!mounted) return;
     context.read<NutritionBloc>().add(NutritionAddFood(log));
     context.read<ScannerBloc>().add(const ScannerReset());
-    if (mounted) setState(() => _savedToLog = true);
+    setState(() => _savedToLog = true);
   }
 
   Future<void> _saveToCollection() async {
