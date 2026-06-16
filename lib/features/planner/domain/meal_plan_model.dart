@@ -49,13 +49,20 @@ class MealPlanModel {
         'createdAt': Timestamp.fromDate(createdAt),
       };
 
-  MealPlanModel copyWith({bool? isDone, bool? isReminderOn}) => MealPlanModel(
+  MealPlanModel copyWith({
+    bool? isDone,
+    bool? isReminderOn,
+    String? menuName,
+    String? mealType,
+    String? reminderTime,
+  }) =>
+      MealPlanModel(
         id: id,
         userId: userId,
         date: date,
-        mealType: mealType,
-        menuName: menuName,
-        reminderTime: reminderTime,
+        mealType: mealType ?? this.mealType,
+        menuName: menuName ?? this.menuName,
+        reminderTime: reminderTime ?? this.reminderTime,
         isReminderOn: isReminderOn ?? this.isReminderOn,
         isDone: isDone ?? this.isDone,
         createdAt: createdAt,

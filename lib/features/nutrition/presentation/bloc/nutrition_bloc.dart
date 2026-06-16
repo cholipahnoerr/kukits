@@ -1,3 +1,4 @@
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/nutrition_repository.dart';
 import 'nutrition_event.dart';
@@ -9,7 +10,7 @@ class NutritionBloc extends Bloc<NutritionEvent, NutritionState> {
   NutritionBloc({NutritionRepository? repository})
       : _repository = repository ?? NutritionRepository(),
         super(const NutritionState()) {
-    on<NutritionLoadDay>(_onLoadDay);
+    on<NutritionLoadDay>(_onLoadDay, transformer: restartable());
     on<NutritionAddFood>(_onAddFood);
     on<NutritionUpdateFood>(_onUpdateFood);
     on<NutritionDeleteFood>(_onDeleteFood);
@@ -20,7 +21,7 @@ class NutritionBloc extends Bloc<NutritionEvent, NutritionState> {
     await emit.forEach(
       _repository.watchDailyLogs(event.userId, event.date),
       onData: (logs) => state.copyWith(logs: logs, isLoading: false, date: event.date),
-      onError: (_, _) => state.copyWith(isLoading: false, error: 'Gagal memuat data'),
+      onError: (e, _) => state.copyWith(isLoading: false, error: 'Gagal memuat data'),
     );
   }
 

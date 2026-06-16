@@ -109,17 +109,48 @@ class _UploadBuktiScreenState extends State<UploadBuktiScreen> {
                 _SectionLabel(label: 'Transfer ke Rekening'),
                 const SizedBox(height: 10),
                 _BankCard(
-                  bank: 'BCA',
-                  accountNo: '1234567890',
-                  name: 'Kukits Store',
-                  color: const Color(0xFF005BAC),
+                  bank: 'Jago',
+                  accountNo: '101258319890',
+                  name: 'Alya R M',
+                  color: const Color(0xFF00A8A8),
                 ),
+                const SizedBox(height: 20),
+                // QRIS section
+                _SectionLabel(label: 'Atau Bayar via QRIS'),
                 const SizedBox(height: 10),
-                _BankCard(
-                  bank: 'Mandiri',
-                  accountNo: '0987654321',
-                  name: 'Kukits Store',
-                  color: const Color(0xFF003087),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.cardBorder),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Color(0x082D3436),
+                          blurRadius: 8,
+                          offset: Offset(0, 3)),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/qris.png',
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Scan QRIS untuk membayar',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 // Info box

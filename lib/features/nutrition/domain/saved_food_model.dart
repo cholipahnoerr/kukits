@@ -8,6 +8,7 @@ class SavedFoodModel {
   final double proteinPerServing;
   final double carbsPerServing;
   final double fatPerServing;
+  final String? imageUrl;
   final DateTime createdAt;
 
   const SavedFoodModel({
@@ -18,6 +19,7 @@ class SavedFoodModel {
     required this.proteinPerServing,
     required this.carbsPerServing,
     required this.fatPerServing,
+    this.imageUrl,
     required this.createdAt,
   });
 
@@ -31,6 +33,7 @@ class SavedFoodModel {
       proteinPerServing: (d['proteinPerServing'] as num).toDouble(),
       carbsPerServing: (d['carbsPerServing'] as num).toDouble(),
       fatPerServing: (d['fatPerServing'] as num).toDouble(),
+      imageUrl: d['imageUrl'] as String?,
       createdAt: (d['createdAt'] as Timestamp).toDate(),
     );
   }
@@ -42,6 +45,7 @@ class SavedFoodModel {
         'proteinPerServing': proteinPerServing,
         'carbsPerServing': carbsPerServing,
         'fatPerServing': fatPerServing,
+        'imageUrl': imageUrl,
         'createdAt': Timestamp.fromDate(createdAt),
       };
 }

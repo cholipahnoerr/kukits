@@ -32,7 +32,8 @@ class ScanResult {
 
 class AiService {
   static const _endpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite'
+      ':generateContent';
 
   static const _prompt = '''
 Analisis gambar makanan ini dan berikan estimasi nutrisi dalam format JSON berikut:
@@ -79,7 +80,7 @@ Hanya kembalikan JSON, tanpa teks lain.
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Gemini API error: ${response.statusCode}');
+      throw Exception('Gemini API error ${response.statusCode}: ${response.body}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;

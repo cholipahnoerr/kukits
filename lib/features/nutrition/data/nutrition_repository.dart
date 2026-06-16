@@ -8,9 +8,12 @@ class NutritionRepository {
     return _col
         .where('userId', isEqualTo: userId)
         .where('date', isEqualTo: date)
-        .orderBy('createdAt')
         .snapshots()
-        .map((s) => s.docs.map(FoodLogModel.fromFirestore).toList());
+        .map((s) {
+      final logs = s.docs.map(FoodLogModel.fromFirestore).toList();
+      logs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      return logs;
+    });
   }
 
   Future<void> addFoodLog(FoodLogModel log) async {
@@ -26,15 +29,19 @@ class NutritionRepository {
   }
 
   Stream<List<FoodLogModel>> watchHistory(String userId, {int days = 7}) {
-    final dates = List.generate(days, (i) {
-      final d = DateTime.now().subtract(Duration(days: i));
-      return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    });
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    final cutoffKey =
+        '${cutoff.year}-${cutoff.month.toString().padLeft(2, '0')}-${cutoff.day.toString().padLeft(2, '0')}';
     return _col
         .where('userId', isEqualTo: userId)
-        .where('date', whereIn: dates)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((s) => s.docs.map(FoodLogModel.fromFirestore).toList());
+        .map((s) {
+      final logs = s.docs
+          .map(FoodLogModel.fromFirestore)
+          .where((l) => l.date.compareTo(cutoffKey) >= 0)
+          .toList();
+      logs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return logs;
+    });
   }
 }

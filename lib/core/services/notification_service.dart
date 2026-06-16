@@ -15,6 +15,12 @@ class NotificationService {
     await _plugin.initialize(
       const InitializationSettings(android: android),
     );
+
+    final androidImpl = _plugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidImpl?.requestNotificationsPermission();
+    await androidImpl?.requestExactAlarmsPermission();
+
     _initialized = true;
   }
 
@@ -48,11 +54,13 @@ class NotificationService {
       scheduled,
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'meal_reminder',
+          'meal_reminder_v2',
           'Pengingat Makan',
           channelDescription: 'Notifikasi jadwal makan',
           importance: Importance.high,
           priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

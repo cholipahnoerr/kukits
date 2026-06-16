@@ -1,3 +1,4 @@
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/planner_repository.dart';
 import '../../../../core/services/notification_service.dart';
@@ -10,10 +11,11 @@ class PlannerBloc extends Bloc<PlannerEvent, PlannerState> {
   PlannerBloc({PlannerRepository? repository})
       : _repository = repository ?? PlannerRepository(),
         super(const PlannerState()) {
-    on<PlannerLoad>(_onLoad);
+    on<PlannerLoad>(_onLoad, transformer: restartable());
     on<PlannerAddMeal>(_onAddMeal);
     on<PlannerToggleDone>(_onToggleDone);
     on<PlannerToggleReminder>(_onToggleReminder);
+    on<PlannerUpdateMeal>(_onUpdateMeal);
     on<PlannerDeleteMeal>(_onDeleteMeal);
   }
 
@@ -53,6 +55,20 @@ class PlannerBloc extends Bloc<PlannerEvent, PlannerState> {
       );
     } else {
       await NotificationService.cancelNotification(event.planId.hashCode);
+    }
+  }
+
+  Future<void> _onUpdateMeal(PlannerUpdateMeal event, Emitter<PlannerState> emit) async {
+    await _repository.updateMealPlan(event.plan);
+    if (event.plan.isReminderOn) {
+      await NotificationService.scheduleMealReminder(
+        id: event.plan.id.hashCode,
+        title: event.plan.mealTypeLabel,
+        body: 'Saatnya ${event.plan.mealTypeLabel}: ${event.plan.menuName}',
+        time: event.plan.reminderTime,
+      );
+    } else {
+      await NotificationService.cancelNotification(event.plan.id.hashCode);
     }
   }
 

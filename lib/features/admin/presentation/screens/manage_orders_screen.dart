@@ -263,7 +263,27 @@ class _OrderCard extends StatelessWidget {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: _StatusUpdateRow(order: order),
+              child: _StatusChip(
+                label: 'Dikirim',
+                icon: Icons.local_shipping_outlined,
+                color: const Color(0xFF9B59B6),
+                onTap: () => context.read<AdminBloc>().add(
+                      AdminUpdateOrderStatus(orderId: order.id, status: 'dikirim'),
+                    ),
+              ),
+            ),
+          ] else if (order.status == 'dikirim') ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: _StatusChip(
+                label: 'Selesai',
+                icon: Icons.check_circle_outline_rounded,
+                color: AppColors.primary,
+                onTap: () => context.read<AdminBloc>().add(
+                      AdminUpdateOrderStatus(orderId: order.id, status: 'selesai'),
+                    ),
+              ),
             ),
           ] else
             const SizedBox(height: 14),
@@ -330,39 +350,6 @@ class _OrderCard extends StatelessWidget {
   }
 }
 
-class _StatusUpdateRow extends StatelessWidget {
-  final OrderModel order;
-  const _StatusUpdateRow({required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _StatusChip(
-            label: 'Dikirim',
-            icon: Icons.local_shipping_outlined,
-            color: const Color(0xFF9B59B6),
-            onTap: () => context.read<AdminBloc>().add(
-                  AdminUpdateOrderStatus(orderId: order.id, status: 'dikirim'),
-                ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _StatusChip(
-            label: 'Selesai',
-            icon: Icons.check_circle_outline_rounded,
-            color: AppColors.textSecondary,
-            onTap: () => context.read<AdminBloc>().add(
-                  AdminUpdateOrderStatus(orderId: order.id, status: 'selesai'),
-                ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _StatusChip extends StatelessWidget {
   final String label;

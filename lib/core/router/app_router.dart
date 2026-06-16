@@ -25,6 +25,7 @@ import '../../features/scanner/presentation/screens/scan_result_screen.dart';
 import '../../features/scanner/presentation/bloc/scanner_state.dart';
 import '../../features/planner/presentation/screens/planner_screen.dart';
 import '../../features/planner/presentation/screens/add_meal_screen.dart';
+import '../../features/planner/domain/meal_plan_model.dart';
 import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
 
 class _AuthChangeNotifier extends ChangeNotifier {
@@ -156,8 +157,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.addMeal,
       builder: (_, state) {
-        final date = state.extra as String;
-        return AddMealScreen(date: date);
+        final extra = state.extra;
+        if (extra is Map) {
+          return AddMealScreen(
+            date: extra['date'] as String,
+            editPlan: extra['plan'] as MealPlanModel?,
+          );
+        }
+        return AddMealScreen(date: extra as String);
       },
     ),
     GoRoute(

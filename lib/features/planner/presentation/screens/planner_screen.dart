@@ -578,6 +578,21 @@ class _PlanTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
+          // Edit
+          GestureDetector(
+            onTap: () => context.push(RouteNames.addMeal, extra: {'date': plan.date, 'plan': plan}),
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
+            ),
+          ),
+          const SizedBox(width: 6),
           // Delete
           GestureDetector(
             onTap: () => _confirmDelete(context, bloc),
@@ -604,7 +619,8 @@ class _PlanTile extends StatelessWidget {
   void _confirmDelete(BuildContext context, PlannerBloc bloc) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      useRootNavigator: false,
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Hapus rencana?',
@@ -619,13 +635,13 @@ class _PlanTile extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               bloc.add(PlannerDeleteMeal(plan.id));
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
             },
             child: Text(
               'Hapus',

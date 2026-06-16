@@ -25,13 +25,38 @@ class ScanResultScreen extends StatefulWidget {
 
 class _ScanResultScreenState extends State<ScanResultScreen> {
   String _mealType = 'sarapan';
-  bool _saved = false;
+  bool _savedToLog = false;
+  bool _savedToCollection = false;
+  String? _uploadedImageUrl;
+  bool _uploading = false;
 
-  void _saveToLog() {
+  final _repo = SavedFoodRepository();
+
+  Future<String?> _getImageUrl(String userId) async {
+    if (_uploadedImageUrl != null) return _uploadedImageUrl;
+    setState(() => _uploading = true);
+    try {
+      final url = await _repo.uploadFoodImage(userId, widget.scanState.imageFile);
+      if (mounted) setState(() { _uploadedImageUrl = url; _uploading = false; });
+      return url;
+    } catch (e) {
+      if (mounted) {
+        setState(() => _uploading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal upload gambar: $e')),
+        );
+      }
+      return null;
+    }
+  }
+
+  Future<void> _saveToLog() async {
     final auth = context.read<AuthBloc>().state;
     if (auth is! AuthAuthenticated) return;
 
     final result = widget.scanState.result;
+    final imageUrl = await _getImageUrl(auth.user.uid);
+
     final log = FoodLogModel(
       id: const Uuid().v4(),
       userId: auth.user.uid,
@@ -44,13 +69,23 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       fat: result.fat,
       portion: result.portion,
       fromScan: true,
+      imageUrl: imageUrl,
       createdAt: DateTime.now(),
     );
 
     context.read<NutritionBloc>().add(NutritionAddFood(log));
     context.read<ScannerBloc>().add(const ScannerReset());
+    if (mounted) setState(() => _savedToLog = true);
+  }
 
-    SavedFoodRepository().saveFood(SavedFoodModel(
+  Future<void> _saveToCollection() async {
+    final auth = context.read<AuthBloc>().state;
+    if (auth is! AuthAuthenticated) return;
+
+    final result = widget.scanState.result;
+    final imageUrl = await _getImageUrl(auth.user.uid);
+
+    await _repo.saveFood(SavedFoodModel(
       id: '',
       userId: auth.user.uid,
       foodName: result.foodName,
@@ -58,10 +93,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       proteinPerServing: result.protein,
       carbsPerServing: result.carbs,
       fatPerServing: result.fat,
+      imageUrl: imageUrl,
       createdAt: DateTime.now(),
     ));
-
-    setState(() => _saved = true);
+    if (mounted) setState(() => _savedToCollection = true);
   }
 
   @override
@@ -185,15 +220,22 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   ),
                   const SizedBox(height: 4),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.straighten_rounded,
-                          size: 14, color: AppColors.textSecondary),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(Icons.straighten_rounded,
+                            size: 14, color: AppColors.textSecondary),
+                      ),
                       const SizedBox(width: 5),
-                      Text(
-                        'Estimasi: ${result.portion}',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+                      Expanded(
+                        child: Text(
+                          'Estimasi: ${result.portion}',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                          softWrap: true,
                         ),
                       ),
                     ],
@@ -206,54 +248,109 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   const Divider(),
                   const SizedBox(height: 16),
                   // Save section
-                  if (!_saved) ...[
-                    Text(
-                      'Simpan ke Log Nutrisi',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryDark,
-                      ),
+                  Text(
+                    'Simpan',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryDark,
                     ),
-                    const SizedBox(height: 12),
-                    _MealTypePicker(
-                      selected: _mealType,
-                      onChanged: (v) => setState(() => _mealType = v),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        onPressed: _saveToLog,
-                        icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-                        label: Text(
-                          'Simpan ke Log',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(height: 14),
+                  // ── Simpan ke Log ──────────────────────────────
+                  _SaveCard(
+                    title: 'Log Nutrisi Harian',
+                    subtitle: 'Tambah ke catatan makan hari ini',
+                    icon: Icons.today_rounded,
+                    saved: _savedToLog,
+                    savedLabel: 'Tersimpan di Log',
+                    color: AppColors.primary,
+                    child: _savedToLog
+                        ? null
+                        : Column(
+                            children: [
+                              _MealTypePicker(
+                                selected: _mealType,
+                                onChanged: (v) =>
+                                    setState(() => _mealType = v),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 46,
+                                child: ElevatedButton.icon(
+                                  onPressed: _uploading ? null : _saveToLog,
+                                  icon: _uploading
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white))
+                                      : const Icon(Icons.add_chart_rounded,
+                                          size: 17),
+                                  label: Text(
+                                    _uploading ? 'Mengupload...' : 'Simpan ke Log',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                  ),
+                  const SizedBox(height: 10),
+                  // ── Simpan ke Koleksi ──────────────────────────
+                  _SaveCard(
+                    title: 'Koleksi Makanan',
+                    subtitle: 'Simpan untuk dipakai lagi nanti',
+                    icon: Icons.bookmark_rounded,
+                    saved: _savedToCollection,
+                    savedLabel: 'Tersimpan di Koleksi',
+                    color: AppColors.accent,
+                    child: _savedToCollection
+                        ? null
+                        : SizedBox(
+                            width: double.infinity,
+                            height: 46,
+                            child: OutlinedButton.icon(
+                              onPressed: _uploading ? null : _saveToCollection,
+                              icon: _uploading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2))
+                                  : const Icon(Icons.bookmark_add_outlined,
+                                      size: 17),
+                              label: Text(
+                                _uploading ? 'Mengupload...' : 'Simpan ke Koleksi',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.pop(),
+                      icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                      label: Text(
+                        'Scan Ulang',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: OutlinedButton.icon(
-                        onPressed: () => context.pop(),
-                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                        label: Text(
-                          'Scan Ulang',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ] else
-                    _SavedBanner(),
+                  ),
                 ],
               ),
             ),
@@ -470,73 +567,106 @@ class _MealTypePicker extends StatelessWidget {
   }
 }
 
-// ── Saved Banner ──────────────────────────────────────────────────
-class _SavedBanner extends StatelessWidget {
+// ── Save Card ─────────────────────────────────────────────────────
+class _SaveCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool saved;
+  final String savedLabel;
+  final Color color;
+  final Widget? child;
+
+  const _SaveCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.saved,
+    required this.savedLabel,
+    required this.color,
+    this.child,
+  });
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-          ),
-          child: Row(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: saved ? color.withValues(alpha: 0.06) : AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: saved ? color.withValues(alpha: 0.3) : AppColors.cardBorder,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.check_rounded, color: Colors.white, size: 24),
+                child: Icon(icon, size: 18, color: color),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tersimpan!',
+                      title,
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.primaryDark,
                       ),
                     ),
                     Text(
-                      'Makanan berhasil ditambahkan ke log nutrisimu.',
+                      subtitle,
                       style: GoogleFonts.inter(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
+              if (saved)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_rounded, size: 12, color: color),
+                      const SizedBox(width: 4),
+                      Text(
+                        savedLabel,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: OutlinedButton.icon(
-            onPressed: () => context.pop(),
-            icon: const Icon(Icons.camera_alt_outlined, size: 18),
-            label: Text(
-              'Scan Makanan Lain',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
+          if (child != null) ...[
+            const SizedBox(height: 14),
+            child!,
+          ],
+        ],
+      ),
     );
   }
 }

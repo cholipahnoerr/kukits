@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -785,29 +786,23 @@ class _FoodLogTile extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
       child: Row(
         children: [
-          // Scan badge
-          if (log.fromScan)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.qr_code_scanner_rounded, size: 10, color: AppColors.accent),
-                    const SizedBox(width: 3),
-                    Text(
-                      'Scan',
-                      style: GoogleFonts.inter(fontSize: 9, color: AppColors.accent, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
+          // Food image thumbnail
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: log.imageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: log.imageUrl!,
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => _FoodImagePlaceholder(fromScan: log.fromScan),
+                      errorWidget: (_, __, ___) => _FoodImagePlaceholder(fromScan: log.fromScan),
+                    )
+                  : _FoodImagePlaceholder(fromScan: log.fromScan),
             ),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -862,7 +857,8 @@ class _FoodLogTile extends StatelessWidget {
   void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      useRootNavigator: false,
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Hapus log?',
@@ -874,17 +870,40 @@ class _FoodLogTile extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               onDelete(log.id);
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
             },
             child: Text('Hapus', style: GoogleFonts.inter(color: AppColors.error, fontWeight: FontWeight.w600)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FoodImagePlaceholder extends StatelessWidget {
+  final bool fromScan;
+  const _FoodImagePlaceholder({required this.fromScan});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: fromScan
+            ? AppColors.accent.withValues(alpha: 0.10)
+            : AppColors.primary.withValues(alpha: 0.08),
+      ),
+      child: Icon(
+        fromScan ? Icons.document_scanner_outlined : Icons.restaurant_outlined,
+        size: 20,
+        color: fromScan ? AppColors.accent : AppColors.primary,
       ),
     );
   }

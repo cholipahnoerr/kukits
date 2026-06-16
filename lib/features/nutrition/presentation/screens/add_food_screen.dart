@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -773,16 +774,18 @@ class _FoodLibrarySheetState extends State<_FoodLibrarySheet> {
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 4, vertical: 4),
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color:
-                              AppColors.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.restaurant_outlined,
-                            size: 18, color: AppColors.primary),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: food.imageUrl != null
+                            ? CachedNetworkImage(
+                                imageUrl: food.imageUrl!,
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) => _SavedFoodPlaceholder(),
+                                errorWidget: (_, __, ___) => _SavedFoodPlaceholder(),
+                              )
+                            : _SavedFoodPlaceholder(),
                       ),
                       title: Text(
                         food.foodName,
@@ -811,6 +814,19 @@ class _FoodLibrarySheetState extends State<_FoodLibrarySheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SavedFoodPlaceholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      color: AppColors.primary.withValues(alpha: 0.08),
+      child: const Icon(Icons.restaurant_outlined,
+          size: 18, color: AppColors.primary),
     );
   }
 }

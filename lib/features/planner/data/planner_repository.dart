@@ -12,9 +12,12 @@ class PlannerRepository {
     return _col
         .where('userId', isEqualTo: userId)
         .where('date', whereIn: dates)
-        .orderBy('date')
         .snapshots()
-        .map((s) => s.docs.map(MealPlanModel.fromFirestore).toList());
+        .map((s) {
+      final plans = s.docs.map(MealPlanModel.fromFirestore).toList();
+      plans.sort((a, b) => a.date.compareTo(b.date));
+      return plans;
+    });
   }
 
   Future<String> addMealPlan(MealPlanModel plan) async {
@@ -28,6 +31,10 @@ class PlannerRepository {
 
   Future<void> toggleReminder(String id, bool isOn) async {
     await _col.doc(id).update({'isReminderOn': isOn});
+  }
+
+  Future<void> updateMealPlan(MealPlanModel plan) async {
+    await _col.doc(plan.id).update(plan.toFirestore());
   }
 
   Future<void> deleteMealPlan(String id) async {

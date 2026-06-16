@@ -22,6 +22,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _qty = 1;
   int _imageIndex = 0;
   bool _descExpanded = false;
+  bool _toastVisible = false;
 
   ProductModel get p => widget.product;
 
@@ -37,16 +38,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     for (var i = 0; i < _qty; i++) {
       context.read<CartBloc>().add(CartAddItem(p));
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$_qty × ${p.name} ditambahkan ke keranjang'),
-        action: SnackBarAction(
-          label: 'Lihat',
-          textColor: AppColors.accent,
-          onPressed: () => context.push(RouteNames.cart),
-        ),
-      ),
-    );
+    setState(() => _toastVisible = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _toastVisible = false);
+    });
   }
 
   @override
@@ -69,6 +64,52 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               )),
               const SliverToBoxAdapter(child: SizedBox(height: 110)),
             ],
+          ),
+          // Cart toast
+          Positioned(
+            bottom: 16,
+            left: 24,
+            right: 24,
+            child: AnimatedOpacity(
+              opacity: _toastVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 250),
+              child: IgnorePointer(
+                ignoring: !_toastVisible,
+                child: GestureDetector(
+                  onTap: () => context.push(RouteNames.cart),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDark,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4)),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '$_qty × ${p.name} ditambahkan ke keranjang',
+                            style: GoogleFonts.inter(fontSize: 13, color: Colors.white),
+                          ),
+                        ),
+                        Text(
+                          'Lihat',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
           // Back + cart buttons overlay
           SafeArea(

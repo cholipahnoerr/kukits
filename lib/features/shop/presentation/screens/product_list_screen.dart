@@ -25,7 +25,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final _searchCtrl = TextEditingController();
   String _searchQuery = '';
 
-  static const _categories = ['Semua', 'kukusan', 'paket', 'makanan', 'minuman'];
+  static const _categories = ['Semua', 'kukusan', 'paket'];
 
   @override
   void initState() {
@@ -116,7 +116,7 @@ class _Header extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Toko Kukits',
+                        'Kukits',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,

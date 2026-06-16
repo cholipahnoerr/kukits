@@ -11,7 +11,8 @@ import '../bloc/planner_event.dart';
 
 class AddMealScreen extends StatefulWidget {
   final String date;
-  const AddMealScreen({super.key, required this.date});
+  final MealPlanModel? editPlan;
+  const AddMealScreen({super.key, required this.date, this.editPlan});
 
   @override
   State<AddMealScreen> createState() => _AddMealScreenState();
@@ -19,9 +20,28 @@ class AddMealScreen extends StatefulWidget {
 
 class _AddMealScreenState extends State<AddMealScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _menuCtrl = TextEditingController();
-  String _mealType = 'sarapan';
-  TimeOfDay _reminderTime = const TimeOfDay(hour: 7, minute: 0);
+  late final TextEditingController _menuCtrl;
+  late String _mealType;
+  late TimeOfDay _reminderTime;
+
+  bool get _isEdit => widget.editPlan != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final plan = widget.editPlan;
+    _menuCtrl = TextEditingController(text: plan?.menuName ?? '');
+    _mealType = plan?.mealType ?? 'sarapan';
+    if (plan != null) {
+      final parts = plan.reminderTime.split(':');
+      _reminderTime = TimeOfDay(
+        hour: int.parse(parts[0]),
+        minute: int.parse(parts[1]),
+      );
+    } else {
+      _reminderTime = const TimeOfDay(hour: 7, minute: 0);
+    }
+  }
 
   @override
   void dispose() {
@@ -43,17 +63,25 @@ class _AddMealScreenState extends State<AddMealScreen> {
     final timeStr =
         '${_reminderTime.hour.toString().padLeft(2, '0')}:${_reminderTime.minute.toString().padLeft(2, '0')}';
 
-    final plan = MealPlanModel(
-      id: const Uuid().v4(),
-      userId: auth.user.uid,
-      date: widget.date,
-      mealType: _mealType,
-      menuName: _menuCtrl.text.trim(),
-      reminderTime: timeStr,
-      createdAt: DateTime.now(),
-    );
-
-    context.read<PlannerBloc>().add(PlannerAddMeal(plan));
+    if (_isEdit) {
+      final updated = widget.editPlan!.copyWith(
+        menuName: _menuCtrl.text.trim(),
+        mealType: _mealType,
+        reminderTime: timeStr,
+      );
+      context.read<PlannerBloc>().add(PlannerUpdateMeal(updated));
+    } else {
+      final plan = MealPlanModel(
+        id: const Uuid().v4(),
+        userId: auth.user.uid,
+        date: widget.date,
+        mealType: _mealType,
+        menuName: _menuCtrl.text.trim(),
+        reminderTime: timeStr,
+        createdAt: DateTime.now(),
+      );
+      context.read<PlannerBloc>().add(PlannerAddMeal(plan));
+    }
     Navigator.pop(context);
   }
 
@@ -73,7 +101,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _TopBar(date: _formatDate(widget.date)),
+          _TopBar(date: _formatDate(widget.date), isEdit: _isEdit),
           Expanded(
             child: Form(
               key: _formKey,
@@ -192,7 +220,7 @@ class _AddMealScreenState extends State<AddMealScreen> {
                       onPressed: _save,
                       icon: const Icon(Icons.check_rounded, size: 18),
                       label: Text(
-                        'Simpan Rencana',
+                        _isEdit ? 'Simpan Perubahan' : 'Simpan Rencana',
                         style: GoogleFonts.plusJakartaSans(
                             fontSize: 15, fontWeight: FontWeight.w600),
                       ),
@@ -211,7 +239,8 @@ class _AddMealScreenState extends State<AddMealScreen> {
 // ── Top Bar ───────────────────────────────────────────────────────
 class _TopBar extends StatelessWidget {
   final String date;
-  const _TopBar({required this.date});
+  final bool isEdit;
+  const _TopBar({required this.date, required this.isEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -243,7 +272,7 @@ class _TopBar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tambah Rencana Makan',
+                      isEdit ? 'Edit Rencana Makan' : 'Tambah Rencana Makan',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,

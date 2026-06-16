@@ -45,3 +45,10 @@ class PlannerDeleteMeal extends PlannerEvent {
   @override
   List<Object?> get props => [id];
 }
+
+class PlannerUpdateMeal extends PlannerEvent {
+  final MealPlanModel plan;
+  const PlannerUpdateMeal(this.plan);
+  @override
+  List<Object?> get props => [plan];
+}

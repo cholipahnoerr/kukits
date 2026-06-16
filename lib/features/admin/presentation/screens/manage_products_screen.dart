@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../shop/domain/product_model.dart';
+import '../../data/admin_repository.dart';
 import '../bloc/admin_bloc.dart';
 import '../bloc/admin_event.dart';
 import '../bloc/admin_state.dart';
@@ -324,6 +328,28 @@ class _ImagePlaceholder extends StatelessWidget {
   }
 }
 
+class _EmptyImagePicker extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.primary.withValues(alpha: 0.05),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.add_photo_alternate_outlined,
+              size: 36, color: AppColors.textSecondary),
+          const SizedBox(height: 6),
+          Text(
+            'Tap untuk pilih foto',
+            style: GoogleFonts.inter(
+                fontSize: 12, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -366,6 +392,8 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
   late TextEditingController _priceCtrl;
   late TextEditingController _stockCtrl;
   String _category = 'kukusan';
+  File? _pickedImage;
+  bool _saving = false;
 
   bool get _isEdit => widget.existing != null;
 
@@ -389,26 +417,54 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
     super.dispose();
   }
 
-  void _save() {
-    if (!_formKey.currentState!.validate()) return;
-
-    final product = ProductModel(
-      id: widget.existing?.id ?? const Uuid().v4(),
-      name: _nameCtrl.text.trim(),
-      description: _descCtrl.text.trim(),
-      price: int.parse(_priceCtrl.text),
-      stock: int.parse(_stockCtrl.text),
-      imageUrls: widget.existing?.imageUrls ?? [],
-      category: _category,
-      isActive: widget.existing?.isActive ?? true,
-      sold: widget.existing?.sold ?? 0,
-      createdAt: widget.existing?.createdAt ?? DateTime.now(),
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 800,
     );
+    if (picked != null) setState(() => _pickedImage = File(picked.path));
+  }
 
-    context
-        .read<AdminBloc>()
-        .add(AdminSaveProduct(product: product, isNew: !_isEdit));
-    Navigator.pop(context);
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+
+    try {
+      final productId = widget.existing?.id ?? const Uuid().v4();
+      List<String> imageUrls = widget.existing?.imageUrls ?? [];
+
+      if (_pickedImage != null) {
+        final url = await AdminRepository().uploadProductImage(productId, _pickedImage!);
+        imageUrls = [url];
+      }
+
+      final product = ProductModel(
+        id: productId,
+        name: _nameCtrl.text.trim(),
+        description: _descCtrl.text.trim(),
+        price: int.parse(_priceCtrl.text),
+        stock: int.parse(_stockCtrl.text),
+        imageUrls: imageUrls,
+        category: _category,
+        isActive: widget.existing?.isActive ?? true,
+        sold: widget.existing?.sold ?? 0,
+        createdAt: widget.existing?.createdAt ?? DateTime.now(),
+      );
+
+      if (mounted) {
+        context.read<AdminBloc>().add(AdminSaveProduct(product: product, isNew: !_isEdit));
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal upload gambar: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -475,6 +531,77 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Image picker
+                    GestureDetector(
+                      onTap: _saving ? null : _pickImage,
+                      child: Container(
+                        height: 140,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.cardBorder),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            if (_pickedImage != null)
+                              Image.file(_pickedImage!, fit: BoxFit.cover)
+                            else if (widget.existing?.imageUrls.isNotEmpty == true)
+                              CachedNetworkImage(
+                                imageUrl: widget.existing!.imageUrls.first,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, _, _) => _EmptyImagePicker(),
+                              )
+                            else
+                              _EmptyImagePicker(),
+                            Container(
+                              color: Colors.black26,
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _pickedImage != null ||
+                                                widget.existing?.imageUrls
+                                                        .isNotEmpty ==
+                                                    true
+                                            ? Icons.edit_rounded
+                                            : Icons.add_photo_alternate_outlined,
+                                        size: 16,
+                                        color: AppColors.primaryDark,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _pickedImage != null ||
+                                                widget.existing?.imageUrls
+                                                        .isNotEmpty ==
+                                                    true
+                                            ? 'Ganti Foto'
+                                            : 'Tambah Foto',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primaryDark,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     _FormField(
                       controller: _nameCtrl,
                       label: 'Nama Produk',
@@ -533,13 +660,26 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
                     SizedBox(
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed: _save,
-                        icon: Icon(
-                          _isEdit ? Icons.check_rounded : Icons.add_rounded,
-                          size: 18,
-                        ),
+                        onPressed: _saving ? null : _save,
+                        icon: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : Icon(
+                                _isEdit
+                                    ? Icons.check_rounded
+                                    : Icons.add_rounded,
+                                size: 18,
+                              ),
                         label: Text(
-                          _isEdit ? 'Simpan Perubahan' : 'Tambah Produk',
+                          _saving
+                              ? 'Mengupload...'
+                              : _isEdit
+                                  ? 'Simpan Perubahan'
+                                  : 'Tambah Produk',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,

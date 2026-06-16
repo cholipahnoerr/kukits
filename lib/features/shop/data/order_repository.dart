@@ -71,9 +71,12 @@ class OrderRepository {
   Stream<List<OrderModel>> watchUserOrders(String userId) {
     return _col
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(OrderModel.fromFirestore).toList());
+        .map((snap) {
+      final orders = snap.docs.map(OrderModel.fromFirestore).toList();
+      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return orders;
+    });
   }
 
   Stream<OrderModel> watchOrder(String orderId) {
