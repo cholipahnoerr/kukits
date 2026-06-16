@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../auth/domain/user_model.dart';
@@ -74,6 +75,20 @@ class ProfileScreen extends StatelessWidget {
                 ),
               SliverToBoxAdapter(
                 child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  child: _MenuGroup(
+                    children: [
+                      _MenuTile(
+                        icon: Icons.chat_outlined,
+                        label: 'Hubungi Kami via WhatsApp',
+                        onTap: () => _openWhatsApp(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
                   child: _MenuGroup(
                     children: [
@@ -93,6 +108,13 @@ class ProfileScreen extends StatelessWidget {
       ),
       ),
     );
+  }
+
+  Future<void> _openWhatsApp() async {
+    final uri = Uri.parse('https://wa.me/6282197349464');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   void _confirmLogout(BuildContext context) {

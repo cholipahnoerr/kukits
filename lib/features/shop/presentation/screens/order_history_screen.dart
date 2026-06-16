@@ -295,7 +295,7 @@ class _EmptyOrders extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: () => context.pop(),
+            onPressed: () => context.go(RouteNames.home),
             icon: const Icon(Icons.storefront_outlined, size: 18),
             label: Text(
               'Mulai Belanja',
